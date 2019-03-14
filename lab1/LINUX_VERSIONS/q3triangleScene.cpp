@@ -4,11 +4,17 @@
 
 using namespace std;
 
-const int NumTimesToSubdivide = 5;
-const int NumTriangles = 243;  // 3^5 triangles generated
+//const int NumTimesToSubdivide = 5;
+const int NumTriangles = 3;  // 3^5 triangles generated
 const int NumVertices  = 3 * NumTriangles;
 
-vec2 points[NumVertices];
+vec2 points[NumVertices] =
+{
+  vec2(-0.5, -0.5), vec2(-0.5, 0.0), vec2(0.0, 0.5),
+  vec2(0.0, -0.5),  vec2(0.0, 0.0), vec2(0.5, 0.5),
+  vec2(0.5, -0.5),  vec2(0.5, 0.0), vec2(-0.5, 0.5)
+};
+
 int Index = 0;
 
 //----------------------------------------------------------------------------
@@ -22,22 +28,22 @@ triangle( const vec2& a, const vec2& b, const vec2& c )
 }
 
 //----------------------------------------------------------------------------
-
-void
-divide_triangle( const vec2& a, const vec2& b, const vec2& c, int count )
-{
-    if ( count > 0 ) {
-        vec2 v0 = ( a + b ) / 2.0;
-        vec2 v1 = ( a + c ) / 2.0;
-        vec2 v2 = ( b + c ) / 2.0;
-        divide_triangle( a, v0, v1, count - 1 );
-        divide_triangle( c, v1, v2, count - 1 );
-        divide_triangle( b, v2, v0, count - 1 );
-    }
-    else {
-        triangle( a, b, c );    // draw triangle at end of recursion
-    }
-}
+//
+// void
+// divide_triangle( const vec2& a, const vec2& b, const vec2& c, int count )
+// {
+//     if ( count > 0 ) {
+//         vec2 v0 = ( a + b ) / 2.0;
+//         vec2 v1 = ( a + c ) / 2.0;
+//         vec2 v2 = ( b + c ) / 2.0;
+//         divide_triangle( a, v0, v1, count - 1 );
+//         divide_triangle( c, v1, v2, count - 1 );
+//         divide_triangle( b, v2, v0, count - 1 );
+//     }
+//     else {
+//         triangle( a, b, c );    // draw triangle at end of recursion
+//     }
+// }
 
 //----------------------------------------------------------------------------
 
@@ -76,7 +82,7 @@ init( void )
     glVertexAttribPointer( loc, 2, GL_FLOAT, GL_FALSE, 0,
                            BUFFER_OFFSET(0) );
 
-    glClearColor( 1.0, 1.0, 1.0, 1.0 ); /* white background */
+    glClearColor( 0, 0, 0, 0 ); /* black background */
 }
 
 //----------------------------------------------------------------------------
