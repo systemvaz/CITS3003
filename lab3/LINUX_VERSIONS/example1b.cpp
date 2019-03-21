@@ -1,5 +1,15 @@
-// Two-Dimensional Sierpinski Gasket
+// Two-Dimensional Sierpinski Gasket       
 // Generated using randomly selected vertices and bisection
+//
+// Same as example1.cpp except that the line
+//     glutInitWindowSize( 512, 512 );
+// is commented in main(). To run the program, can specify command
+// line arguments as follows:
+//     example1b -geometry 512x512+0+0
+//
+// Du Huynh
+// Oct 2015
+
 
 #include "Angel.h"
 
@@ -12,7 +22,7 @@ init( void )
 {
     vec2 points[NumPoints];
 
-    // Specifiy the vertices of a triangle
+    // Specifiy the vertices for a triangle
     vec2 vertices[3] = {
         vec2( -1.0, -1.0 ), vec2( 0.0, 1.0 ), vec2( 1.0, -1.0 )
     };
@@ -27,12 +37,6 @@ init( void )
         // Compute the point halfway between the selected vertex
         //   and the previous point
         points[i] = ( points[i - 1] + vertices[j] ) / 2.0;
-
-        if (length(points[i]) > 1)
-        {
-          i--;
-        }
-
     }
 
     // Create a vertex array object
@@ -47,7 +51,7 @@ init( void )
     glBufferData( GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW );
 
     // Load shaders and use the resulting shader program
-    GLuint program = InitShader( "vrotate2d.glsl, vshader21.glsl", "fshader21.glsl" );
+    GLuint program = InitShader( "vshader21.glsl", "fshader21.glsl" );
     glUseProgram( program );
 
     // Initialize the vertex position attribute from the vertex shader
@@ -86,13 +90,17 @@ keyboard( unsigned char key, int x, int y )
 int
 main( int argc, char **argv )
 {
+    fprintf(stderr, "argc = %d\n", argc);
+    for (int i=0; i < argc; i++)
+        fprintf(stderr, "argv[%d] = %s\n", i, argv[i]);
+
     glutInit( &argc, argv );
     glutInitDisplayMode( GLUT_RGBA );
-    glutInitWindowSize( 512, 512 );
+    // glutInitWindowSize( 512, 512 );
 
-    // If you are using freeglut, the next two lines will check if
+    // If you are using freeglut, the next two lines will check if 
     // the code is truly 3.2. Otherwise, comment them out
-
+    
     glutInitContextVersion( 3, 2 );
     glutInitContextProfile( GLUT_CORE_PROFILE );
 

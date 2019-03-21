@@ -3,7 +3,8 @@
 
 #include "Angel.h"
 
-const int NumPoints = 5000;
+const int NumPoints = 30000;
+int timeParam;
 
 //----------------------------------------------------------------------------
 
@@ -28,10 +29,10 @@ init( void )
         //   and the previous point
         points[i] = ( points[i - 1] + vertices[j] ) / 2.0;
 
-        if (length(points[i]) > 1)
-        {
-          i--;
-        }
+        // if (length(points[i]) > 1)
+        // {
+        //   i--;
+        // }
 
     }
 
@@ -47,26 +48,35 @@ init( void )
     glBufferData( GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW );
 
     // Load shaders and use the resulting shader program
-    GLuint program = InitShader( "vrotate2d.glsl, vshader21.glsl", "fshader21.glsl" );
+    GLuint program = InitShader( "vrotate2d.glsl", "fshader21.glsl" );
     glUseProgram( program );
 
     // Initialize the vertex position attribute from the vertex shader
-    GLuint loc = glGetAttribLocation( program, "vPosition" );
-    glEnableVertexAttribArray( loc );
-    glVertexAttribPointer( loc, 2, GL_FLOAT, GL_FALSE, 0,
+    GLuint vPosition = glGetAttribLocation( program, "vPosition" );
+    glEnableVertexAttribArray( vPosition );
+    glVertexAttribPointer( vPosition, 2, GL_FLOAT, GL_FALSE, 0,
                            BUFFER_OFFSET(0) );
+
+    GLuint timeParam = glGetUniformLocation(program, "time");
 
     glClearColor( 1.0, 1.0, 1.0, 1.0 ); // white background
 }
 
+
+void idle(void)
+{
+  glutPostRedisplay();
+}
 //----------------------------------------------------------------------------
 
 void
 display( void )
 {
     glClear( GL_COLOR_BUFFER_BIT );     // clear the window
+    glUniform1f(timeParam, glutGet(GLUT_ELAPSED_TIME));
     glDrawArrays( GL_POINTS, 0, NumPoints );    // draw the points
-    glFlush();
+    //glFlush();
+    glutSwapBuffers();
 }
 
 //----------------------------------------------------------------------------
@@ -103,6 +113,7 @@ main( int argc, char **argv )
     init();
 
     glutDisplayFunc( display );
+    glutIdleFunc(idle);
     glutKeyboardFunc( keyboard );
 
     glutMainLoop();

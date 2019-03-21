@@ -1,4 +1,4 @@
-// Two-Dimensional Sierpinski Gasket
+// Two-Dimensional Sierpinski Gasket       
 // Generated using randomly selected vertices and bisection
 
 #include "Angel.h"
@@ -27,12 +27,6 @@ init( void )
         // Compute the point halfway between the selected vertex
         //   and the previous point
         points[i] = ( points[i - 1] + vertices[j] ) / 2.0;
-
-        if (length(points[i]) > 1)
-        {
-          i--;
-        }
-
     }
 
     // Create a vertex array object
@@ -47,7 +41,7 @@ init( void )
     glBufferData( GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW );
 
     // Load shaders and use the resulting shader program
-    GLuint program = InitShader( "vrotate2d.glsl, vshader21.glsl", "fshader21.glsl" );
+    GLuint program = InitShader( "vshader21.glsl", "fshader21.glsl" );
     glUseProgram( program );
 
     // Initialize the vertex position attribute from the vertex shader
@@ -90,9 +84,9 @@ main( int argc, char **argv )
     glutInitDisplayMode( GLUT_RGBA );
     glutInitWindowSize( 512, 512 );
 
-    // If you are using freeglut, the next two lines will check if
+    // If you are using freeglut, the next two lines will check if 
     // the code is truly 3.2. Otherwise, comment them out
-
+    
     glutInitContextVersion( 3, 2 );
     glutInitContextProfile( GLUT_CORE_PROFILE );
 

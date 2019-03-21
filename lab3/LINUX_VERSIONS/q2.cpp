@@ -3,7 +3,8 @@
 
 #include "Angel.h"
 
-const int NumPoints = 5000;
+const int NumPoints = 30000;
+GLint timeParam, cosParam, sinParam;
 
 //----------------------------------------------------------------------------
 
@@ -13,7 +14,8 @@ init( void )
     vec2 points[NumPoints];
 
     // Specifiy the vertices of a triangle
-    vec2 vertices[3] = {
+    vec2 vertices[3] =
+    {
         vec2( -1.0, -1.0 ), vec2( 0.0, 1.0 ), vec2( 1.0, -1.0 )
     };
 
@@ -21,18 +23,18 @@ init( void )
     points[0] = vec2( 0.25, 0.50 );
 
     // compute and store N-1 new points
-    for ( int i = 1; i < NumPoints; ++i ) {
+    for ( int i = 1; i < NumPoints; ++i )
+    {
         int j = rand() % 3;   // pick a vertex at random
 
         // Compute the point halfway between the selected vertex
         //   and the previous point
         points[i] = ( points[i - 1] + vertices[j] ) / 2.0;
 
-        if (length(points[i]) > 1)
-        {
-          i--;
-        }
-
+        // if (length(points[i]) > 1)
+        // {
+        //   i--;
+        // }
     }
 
     // Create a vertex array object
@@ -47,26 +49,39 @@ init( void )
     glBufferData( GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW );
 
     // Load shaders and use the resulting shader program
-    GLuint program = InitShader( "vrotate2d.glsl, vshader21.glsl", "fshader21.glsl" );
+    GLuint program = InitShader( "vrotate2dq2.glsl", "fshader21.glsl" );
     glUseProgram( program );
 
     // Initialize the vertex position attribute from the vertex shader
-    GLuint loc = glGetAttribLocation( program, "vPosition" );
-    glEnableVertexAttribArray( loc );
-    glVertexAttribPointer( loc, 2, GL_FLOAT, GL_FALSE, 0,
+    GLuint vPosition = glGetAttribLocation( program, "vPosition" );
+    glEnableVertexAttribArray( vPosition );
+    glVertexAttribPointer( vPosition, 2, GL_FLOAT, GL_FALSE, 0,
                            BUFFER_OFFSET(0) );
+
+    //GLuint timeParam = glGetUniformLocation(program, "time");
+    cosParam = glGetUniformLocation(program, "cosAngle");
+    sinParam = glGetUniformLocation(program, "sinAngle");
 
     glClearColor( 1.0, 1.0, 1.0, 1.0 ); // white background
 }
 
+
+void idle(void)
+{
+  glutPostRedisplay();
+}
 //----------------------------------------------------------------------------
 
 void
 display( void )
 {
     glClear( GL_COLOR_BUFFER_BIT );     // clear the window
+    //glUniform1f(timeParam, glutGet(GLUT_ELAPSED_TIME));
+    glUniform1f(cosParam, cos(glutGet(GLUT_ELAPSED_TIME) * 0.01));
+    glUniform1f(sinParam, sin(glutGet(GLUT_ELAPSED_TIME) * 0.01));
     glDrawArrays( GL_POINTS, 0, NumPoints );    // draw the points
-    glFlush();
+    //glFlush();
+    glutSwapBuffers();
 }
 
 //----------------------------------------------------------------------------
@@ -103,6 +118,7 @@ main( int argc, char **argv )
     init();
 
     glutDisplayFunc( display );
+    glutIdleFunc(idle);
     glutKeyboardFunc( keyboard );
 
     glutMainLoop();
