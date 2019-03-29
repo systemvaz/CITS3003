@@ -8,17 +8,14 @@ using namespace std;
 const int NumTriangles = 2;  // 3^5 triangles generated
 const int NumVertices  = 3 * NumTriangles;
 
-vec3 points[NumVertices] =
-{
-  vec3(-0.5, -0.5, 0.0), vec3(0.5, -0.5, 0.0), vec3(-0.5, 0.5, 0.0),
-  vec3(0.5, 0.5, 0.0),  vec3(-0.5, 0.5, 0.0), vec3(0.5, -0.5, 0.0)
+vec3 points[NumVertices] = {
+    vec3( -0.5, -0.5, 0.0 ), vec3(  0.5, -0.5, 0.0 ), vec3( -0.5, 0.5, 0.0 ),
+    vec3(  0.5,  0.5, 0.0 ), vec3( -0.5,  0.5, 0.0 ), vec3( 0.5, -0.5, 0.0 )
 };
 
-vec3 colors[NumVertices] =
-{
-  vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0),
-  vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0)
-
+vec3 colors[NumVertices] = {
+    vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0),
+    vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0),
 };
 
 int Index = 0;
@@ -27,27 +24,19 @@ mat3 xz_multipliers_mat, yz_multipliers_mat, xy_multipliers_mat;
 
 //----------------------------------------------------------------------------
 
-void
-triangle( const vec3& a, const vec3& b, const vec3& c )
+void triangle( const vec3& a, const vec3& b, const vec3& c )
 {
     points[Index++] = a;
     points[Index++] = b;
     points[Index++] = c;
 }
 
-void
-init( void )
+void init( void )
 {
     vec2 vertices[3] =
     {
         vec2( -1.0, -1.0 ), vec2( 0.0, 1.0 ), vec2( 1.0, -1.0 )
     };
-
-/*
-    // Subdivide the original triangle
-    divide_triangle( vertices[0], vertices[1], vertices[2],
-                     NumTimesToSubdivide );
-*/
 
     // Create a vertex array object
     GLuint vao;
@@ -116,22 +105,22 @@ display( void )
                               0.0,             1.0,             0.0,
                               -sin(timeParam), 0.0,             cos(timeParam));
 
+    glUniformMatrix3fv(multipliers, 0, GL_TRUE, xz_multipliers_mat);
+    glDrawArrays( GL_TRIANGLES, 1, NumVertices );
+
     yz_multipliers_mat = mat3(1.0,             0.0,             0.0,
                               0.0,             cos(timeParam),  -sin(timeParam),
                               0.0,             sin(timeParam),  cos(timeParam));
+
+    glUniformMatrix3fv(multipliers, 0, GL_TRUE, yz_multipliers_mat);
+    glDrawArrays(GL_TRIANGLES, 1, NumVertices);
 
     xy_multipliers_mat = mat3(cos(timeParam),  -sin(timeParam), 0.0,
                               sin(timeParam),  cos(timeParam),  0.0,
                               0.0,             0.0,             1.0);
 
-    glUniformMatrix3fv(multipliers, 1, GL_TRUE, xz_multipliers_mat);
-    glDrawArrays( GL_TRIANGLES, 0, NumVertices );
-
-    glUniformMatrix3fv(multipliers, 1, GL_TRUE, yz_multipliers_mat);
-    glDrawArrays(GL_TRIANGLES, 0, NumVertices);
-
-    glUniformMatrix3fv(multipliers, 1, GL_TRUE, xy_multipliers_mat);
-    glDrawArrays(GL_TRIANGLES, 0, NumVertices);
+    glUniformMatrix3fv(multipliers, 0, GL_TRUE, xy_multipliers_mat);
+    glDrawArrays(GL_TRIANGLES, 1, NumVertices);
 
     glutSwapBuffers();
 }

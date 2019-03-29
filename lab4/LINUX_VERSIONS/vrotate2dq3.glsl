@@ -8,7 +8,6 @@
 in  vec3 vPosition;
 out vec4 mycolor;
 uniform mat3 multipliers;
-uniform float random;
 
 void
 main()

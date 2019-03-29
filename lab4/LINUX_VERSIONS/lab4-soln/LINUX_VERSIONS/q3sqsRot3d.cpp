@@ -8,16 +8,23 @@ const int NumVertices  = 3 * NumTriangles;
 vec3 points[NumVertices] = {
     vec3( -0.5, -0.5, 0.0 ), vec3(  0.5, -0.5, 0.0 ), vec3( -0.5, 0.5, 0.0 ),
     vec3(  0.5,  0.5, 0.0 ), vec3( -0.5,  0.5, 0.0 ), vec3( 0.5, -0.5, 0.0 )
-}; 
+};
 
 vec3 colors[NumVertices] = {
     vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0),
-    vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0), 
+    vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0),
 };
 
-GLuint xyzMultipliers; 
+GLuint xyzMultipliers;
 
 //----------------------------------------------------------------------------
+
+void triangle( const vec3& a, const vec3& b, const vec3& c )
+{
+    points[Index++] = a;
+    points[Index++] = b;
+    points[Index++] = c;
+}
 
 void init( void )
 {
@@ -48,7 +55,7 @@ void init( void )
     GLuint program = InitShader( "v-xyz.glsl", "fpassthru.glsl" );
     glUseProgram( program );
 
-    // Initialize the vertex position attribute from the vertex shader    
+    // Initialize the vertex position attribute from the vertex shader
     GLuint vPosition = glGetAttribLocation( program, "vPosition" );
     glEnableVertexAttribArray( vPosition );
     glVertexAttribPointer( vPosition, 3, GL_FLOAT, GL_FALSE, 0,
@@ -79,9 +86,9 @@ void display( void )
     //  We need to clear the depths each time we start to draw the window.
     // glClear( GL_COLOR_BUFFER_BIT );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT  );
- 
+
     float angle = 0.001 * glutGet(GLUT_ELAPSED_TIME);
-        
+
     mat3 xzRotateMultipliers = mat3( vec3(cos(angle) , 0.0, sin(angle)),
                                      vec3(0.0,         1.0,        0.0),
                                      vec3(-sin(angle), 0.0, cos(angle)) );
@@ -99,7 +106,7 @@ void display( void )
                                      vec3(0.0,        0.0,         1.0) );
     glUniformMatrix3fv( xyzMultipliers, 1, GL_TRUE, xyRotateMultipliers );
     glDrawArrays( GL_TRIANGLES, 0, NumVertices );
-        
+
     glutSwapBuffers();
 }
 
