@@ -5,15 +5,45 @@
 using namespace std;
 
 //const int NumTimesToSubdivide = 5;
-const int NumTriangles = 2;  // 3^5 triangles generated
+const int NumTriangles = 12;  // 3^5 triangles generated
 const int NumVertices  = 3 * NumTriangles;
 
 vec3 points[NumVertices] = {
-    vec3( -0.5, -0.5, 0.0 ), vec3(  0.5, -0.5, 0.0 ), vec3( -0.5, 0.5, 0.0 ),
-    vec3(  0.5,  0.5, 0.0 ), vec3( -0.5,  0.5, 0.0 ), vec3( 0.5, -0.5, 0.0 )
+ vec3( -0.5, -0.5,  0.5 ), vec3(  0.5, -0.5,  0.5 ), vec3( -0.5,  0.5, 0.5 ),
+ vec3(  0.5,  0.5,  0.5 ), vec3( -0.5,  0.5,  0.5 ), vec3(  0.5, -0.5, 0.5 ),
+
+ vec3( -0.5, -0.5, -0.5 ), vec3(  0.5, -0.5, -0.5 ), vec3( -0.5,  0.5, -0.5 ),
+ vec3(  0.5,  0.5, -0.5 ), vec3( -0.5,  0.5, -0.5 ), vec3(  0.5, -0.5, -0.5 ),
+
+ vec3(  0.5, -0.5, -0.5 ), vec3(  0.5,  0.5, -0.5 ), vec3(  0.5, -0.5,  0.5 ),
+ vec3(  0.5,  0.5,  0.5 ), vec3(  0.5, -0.5,  0.5 ), vec3(  0.5,  0.5, -0.5 ),
+
+ vec3( -0.5, -0.5, -0.5 ), vec3( -0.5,  0.5, -0.5 ), vec3( -0.5, -0.5,  0.5 ),
+ vec3( -0.5,  0.5,  0.5 ), vec3( -0.5, -0.5,  0.5 ), vec3( -0.5,  0.5, -0.5 ),
+
+ vec3( -0.5,  0.5, -0.5 ), vec3( -0.5,  0.5,  0.5 ), vec3(  0.5,  0.5, -0.5 ),
+ vec3(  0.5,  0.5,  0.5 ), vec3(  0.5,  0.5, -0.5 ), vec3( -0.5,  0.5,  0.5 ),
+
+ vec3( -0.5, -0.5, -0.5 ), vec3( -0.5, -0.5,  0.5 ), vec3(  0.5, -0.5, -0.5 ),
+ vec3(  0.5, -0.5,  0.5 ), vec3(  0.5, -0.5, -0.5 ), vec3( -0.5, -0.5,  0.5 ),
 };
 
 vec3 colors[NumVertices] = {
+    vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0),
+    vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0),
+
+    vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0),
+    vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0),
+
+    vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0),
+    vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0),
+
+    vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0),
+    vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0),
+
+    vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0),
+    vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0),
+
     vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0),
     vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0),
 };
@@ -94,21 +124,18 @@ display( void )
                               0.0,             1.0,             0.0,
                               -sin(timeParam), 0.0,             cos(timeParam));
 
-    glUniformMatrix3fv(multipliers, 1, GL_TRUE, xz_multipliers_mat);
-    glDrawArrays( GL_TRIANGLES, 0, NumVertices );
-
     yz_multipliers_mat = mat3(1.0,             0.0,             0.0,
                               0.0,             cos(timeParam),  -sin(timeParam),
                               0.0,             sin(timeParam),  cos(timeParam));
-
-    glUniformMatrix3fv(multipliers, 1, GL_TRUE, yz_multipliers_mat);
-    glDrawArrays(GL_TRIANGLES, 0, NumVertices);
 
     xy_multipliers_mat = mat3(cos(timeParam),  -sin(timeParam), 0.0,
                               sin(timeParam),  cos(timeParam),  0.0,
                               0.0,             0.0,             1.0);
 
-    glUniformMatrix3fv(multipliers, 1, GL_TRUE, xy_multipliers_mat);
+    glUniformMatrix3fv(multipliers, 1, GL_TRUE,
+                       xz_multipliers_mat *
+                       yz_multipliers_mat *
+                       xy_multipliers_mat);
     glDrawArrays(GL_TRIANGLES, 0, NumVertices);
 
     glutSwapBuffers();
