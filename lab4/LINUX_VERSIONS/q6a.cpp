@@ -8,6 +8,8 @@ using namespace std;
 const int NumTriangles = 12;  // 3^5 triangles generated
 const int NumVertices  = 3 * NumTriangles;
 
+GLint multipliers;
+
 vec3 points[NumVertices] = {
  vec3( -0.5, -0.5,  0.5 ), vec3(  0.5, -0.5,  0.5 ), vec3( -0.5,  0.5, 0.5 ),
  vec3(  0.5,  0.5,  0.5 ), vec3( -0.5,  0.5,  0.5 ), vec3(  0.5, -0.5, 0.5 ),
@@ -47,11 +49,6 @@ vec3 colors[NumVertices] = {
     vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0),
     vec3(0.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0),
 };
-
-int Index = 0;
-GLint multipliers;
-float timeParam;
-mat3 rotY_multipliers_mat, rotX_multipliers_mat;
 
 //----------------------------------------------------------------------------
 
@@ -118,19 +115,15 @@ display( void )
 {
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    timeParam = glutGet(GLUT_ELAPSED_TIME) * 0.001;
+    float timeParam = glutGet(GLUT_ELAPSED_TIME) * 0.001;
 
-    rotY_multipliers_mat = mat3(cos(timeParam),  0.0,           -sin(timeParam),
-                              0.0,             1.0,             0.0,
-                              -sin(timeParam), 0.0,             cos(timeParam));
+    mat3 rotY_multipliers_mat = mat3(cos(timeParam),  0.0,           -sin(timeParam),
+                                     0.0,             1.0,             0.0,
+                                    -sin(timeParam), 0.0,             cos(timeParam));
 
-    rotX_multipliers_mat = mat3(1.0,             0.0,             0.0,
-                              0.0,             cos(timeParam),  -sin(timeParam),
-                              0.0,             sin(timeParam),  cos(timeParam));
-
-    // xy_multipliers_mat = mat3(cos(timeParam),  -sin(timeParam), 0.0,
-    //                           sin(timeParam),  cos(timeParam),  0.0,
-    //                           0.0,             0.0,             1.0);
+    mat3 rotX_multipliers_mat = mat3(1.0,             0.0,             0.0,
+                                     0.0,             cos(timeParam),  -sin(timeParam),
+                                     0.0,             sin(timeParam),   cos(timeParam));
 
     mat3 combine = rotY_multipliers_mat * rotX_multipliers_mat;
 
@@ -161,6 +154,7 @@ main( int argc, char **argv )
     glutInit( &argc, argv );
     glutInitDisplayMode( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH );
     glutInitWindowSize( 512, 512 );
+    
     glutInitContextVersion( 3, 2 );
     glutInitContextProfile( GLUT_CORE_PROFILE );
     glutCreateWindow( "Simple GLSL example" );

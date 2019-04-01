@@ -125,7 +125,11 @@ display( void )
                                      0.0,             cos(timeParam),  -sin(timeParam),
                                      0.0,             sin(timeParam),  cos(timeParam));
 
-    mat3 combine = rotX_multipliers_mat * rotY_multipliers_mat;
+    mat3 shrinkX = mat3( vec3(0.25, 0.0, 0.0),
+                         vec3(0.0,  1.0, 0.0),
+                         vec3(0.0,  0.0, 1.0));
+
+    mat3 combine = shrinkX * rotX_multipliers_mat * rotY_multipliers_mat;
 
     glUniformMatrix3fv(multipliers, 1, GL_TRUE, combine);
 
