@@ -383,10 +383,11 @@ void display( void )
         SceneObject so = sceneObjs[i];
 
         vec3 rgb = so.rgb * lightObj1.rgb * so.brightness * lightObj1.brightness * 2.0;
+        vec3 white = (1.0, 1.0, 1.0);
         glUniform3fv( glGetUniformLocation(shaderProgram, "AmbientProduct"), 1, so.ambient * rgb );
         CheckError();
         glUniform3fv( glGetUniformLocation(shaderProgram, "DiffuseProduct"), 1, so.diffuse * rgb );
-        glUniform3fv( glGetUniformLocation(shaderProgram, "SpecularProduct"), 1, so.specular * rgb );
+        glUniform3fv( glGetUniformLocation(shaderProgram, "SpecularProduct"), 1, so.specular * white );
         glUniform1f( glGetUniformLocation(shaderProgram, "Shininess"), so.shine );
         CheckError();
 
@@ -440,10 +441,26 @@ static void adjustBlueBrightness(vec2 bl_br)
     sceneObjs[toolObj].brightness+=bl_br[1];
 }
 
-struct void adjustDiffuseLighting(vec2 df)
+static void adjustDiffuseLighting(vec2 df)
 {
-    sceneObjs[toolObj].diffuse[0]+=df[0];
-    sceneObjs[toolObj].diffuse[1]+=df[1];
+    sceneObjs[toolObj].diffuse+=df[0];
+    //sceneObjs[toolObj].diffuse[1]+=df[1];
+}
+
+static void adjustSpecularLighting(vec2 spec)
+{
+    sceneObjs[toolObj].specular+=spec[0];
+    //sceneObjs[toolObj].specular[1]+=spec[1];
+}
+
+static void adjustAmbientLighting(vec2 amb)
+{
+    sceneObjs[toolObj].ambient+=amb[0];
+}
+
+static void adjustShine(vec2 shine)
+{
+    sceneObjs[toolObj].shine+=shine[0];
 }
 
 static void lightMenu(int id)
@@ -501,7 +518,11 @@ static void materialMenu(int id)
     if(id==20)
     {
       toolObj = currObject;
-      setToolCallbacks(adjustDiffuseLighting, mat2())
+      setToolCallbacks(adjustDiffuseLighting, mat2(0, 1, 0, 1),
+                       adjustShine, mat2(0, 1, 0, 1));
+      setToolCallbacks(adjustAmbientLighting, mat2(1, 0, 0, 1),
+                       adjustSpecularLighting, mat2(1, 0, 0, 1));
+
     }
     else {
         printf("Error in materialMenu\n");
@@ -602,10 +623,11 @@ void reshape( int width, int height )
     //         that the same part of the scene is visible across the width of
     //         the window.
 
-    GLfloat nearDist = 0.2;
+    GLfloat nearDist = 0.01;
     projection = Frustum(-nearDist*(float)width/(float)height,
                          nearDist*(float)width/(float)height,
-                         -nearDist, nearDist,
+                         -nearDist*(float)height/(float)width,
+                         nearDist*(float)height/(float)width,
                          nearDist, 100.0);
 }
 
