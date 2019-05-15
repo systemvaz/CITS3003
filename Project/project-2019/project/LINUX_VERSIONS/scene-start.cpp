@@ -17,6 +17,7 @@ GLint windowHeight=640, windowWidth=960;
 // Reader" code.  This file contains parts of the code that you shouldn't need
 // to modify (but, you can).
 #include "gnatidread.h"
+#include "gnatidread2.h"
 
 using namespace std;        // Import the C++ standard functions (e.g., min)
 
@@ -25,6 +26,7 @@ using namespace std;        // Import the C++ standard functions (e.g., min)
 GLuint shaderProgram; // The number identifying the GLSL shader program
 GLuint vPosition, vNormal, vTexCoord; // IDs for vshader input vars (from glGetAttribLocation)
 GLuint projectionU, modelViewU; // IDs for uniform variables (from glGetUniformLocation)
+GLuint vBoneIDs, vBoneWeights, uBoneTransforms;
 
 static float viewDist = 1.5; // Distance from the camera to the centre of the scene
 static float camRotSidewaysDeg=0; // rotates the camera sideways around the centre
@@ -43,6 +45,8 @@ int numDisplayCalls = 0; // Used to calculate the number of frames per second
 //                           (numMeshes is defined in gnatidread.h)
 aiMesh* meshes[numMeshes]; // For each mesh we have a pointer to the mesh to draw
 GLuint vaoIDs[numMeshes]; // and a corresponding VAO ID from glGenVertexArrays
+
+const aiScene* scenes[numMeshes];
 
 // -----Textures--------------------------------------------------------------
 //                           (numTextures is defined in gnatidread.h)
@@ -115,7 +119,11 @@ void loadMeshIfNotAlreadyLoaded(int meshNumber)
     if (meshes[meshNumber] != NULL)
         return; // Already loaded
 
-    aiMesh* mesh = loadMesh(meshNumber);
+    // aiMesh* mesh = loadMesh(meshNumber);
+    // meshes[meshNumber] = mesh;
+    const aiScene* scene = loadScene(meshNumber);
+    scenes[meshNumber] = scene;
+    aiMesh* mesh = scene->mMeshes[0];
     meshes[meshNumber] = mesh;
 
     glBindVertexArray( vaoIDs[meshNumber] );
@@ -159,6 +167,26 @@ void loadMeshIfNotAlreadyLoaded(int meshNumber)
                            BUFFER_OFFSET(sizeof(float)*6*mesh->mNumVertices) );
     glEnableVertexAttribArray( vNormal );
     CheckError();
+
+    //**************
+    // Get boneIDs and boneWeights for each vertex from the imported mesh data
+    GLint boneIDs[mesh->mNumVertices][4];
+    GLfloat boneWeights[mesh->mNumVertices][4];
+    getBonesAffectingEachVertex(mesh, boneIDs, boneWeights);
+
+    GLuint buffers[2];
+    glGenBuffers( 2, buffers );  // Add two vertex buffer objects
+
+    glBindBuffer( GL_ARRAY_BUFFER, buffers[0] ); CheckError();
+    glBufferData( GL_ARRAY_BUFFER, sizeof(int)*4*mesh->mNumVertices, boneIDs, GL_STATIC_DRAW ); CheckError();
+    glVertexAttribPointer(vBoneIDs, 4, GL_INT, GL_FALSE, 0, BUFFER_OFFSET(0)); CheckError();
+    glEnableVertexAttribArray(vBoneIDs);     CheckError();
+
+    glBindBuffer( GL_ARRAY_BUFFER, buffers[1] );
+    glBufferData( GL_ARRAY_BUFFER, sizeof(float)*4*mesh->mNumVertices, boneWeights, GL_STATIC_DRAW );
+    glVertexAttribPointer(vBoneWeights, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+    glEnableVertexAttribArray(vBoneWeights);    CheckError();
+    //**************
 }
 
 //----------------------------------------------------------------------------
@@ -294,6 +322,10 @@ void init( void )
     projectionU = glGetUniformLocation(shaderProgram, "Projection");
     modelViewU = glGetUniformLocation(shaderProgram, "ModelView");
 
+    vBoneIDs = glGetAttribLocation(shaderProgram, "boneIDs");
+    vBoneWeights = glGetAttribLocation(shaderProgram, "boneWeights");
+    uBoneTransforms = glGetUniformLocation(shaderProgram, "boneTransforms");
+
     // Objects 0, and 1 are the ground and the first light.
     addObject(0); // Square for the ground
     sceneObjs[0].loc = vec4(0.0, 0.0, 0.0, 1.0);
@@ -305,7 +337,13 @@ void init( void )
     sceneObjs[1].loc = vec4(2.0, 1.0, 1.0, 1.0);
     sceneObjs[1].scale = 0.1;
     sceneObjs[1].texId = 0; // Plain texture
-    sceneObjs[1].brightness = 0.2; // The light's brightness is 5 times this (below).
+    sceneObjs[1].brightness = 0.1; // The light's brightness is 5 times this (below).
+
+    addObject(55); //Sphere for second light
+    sceneObjs[2].loc = vec4(-2.0, 1.0, 1.0, 1.0);
+    sceneObjs[2].scale = 0.2;
+    sceneObjs[2].texId = 0;
+    sceneObjs[2].brightness = 0.1;
 
     addObject(rand() % numMeshes); // A test mesh
 
@@ -349,6 +387,26 @@ void drawMesh(SceneObject sceneObj)
     // Activate the VAO for a mesh, loading if needed.
     loadMeshIfNotAlreadyLoaded(sceneObj.meshId);
     CheckError();
+
+    //*************
+    int nBones = meshes[sceneObj.meshId]->mNumBones;
+    if(nBones == 0)
+        // If no bones, just a single identity matrix is used
+        nBones = 1;
+
+    // get boneTransforms for the first (0th) animation at the given
+    // time (a float measured in frames)
+    // (Replace <POSE_TIME> appropriately with a float expression
+    // giving the time relative to the start of the animation,
+    // measured in frames, like the frame numbers in Blender.)
+
+    mat4 boneTransforms[nBones];     // was: mat4 boneTransforms[mesh->mNumBones];
+    calculateAnimPose(meshes[sceneObj.meshId], scenes[sceneObj.meshId], 0,
+                      numDisplayCalls, boneTransforms);
+    glUniformMatrix4fv(uBoneTransforms, nBones, GL_TRUE,
+                      (const GLfloat *)boneTransforms);
+    //**************
+
     glBindVertexArray( vaoIDs[sceneObj.meshId] );
     CheckError();
 
@@ -373,20 +431,24 @@ void display( void )
     view = Translate(0.0, 0.0, -viewDist) * RotateY(camRotSidewaysDeg) * RotateX(camRotUpAndOverDeg);
 
     SceneObject lightObj1 = sceneObjs[1];
-    vec4 lightPosition = view * lightObj1.loc ;
+    SceneObject lightObj2 = sceneObjs[2];
+    vec4 lightPosition = view * lightObj1.loc;
+    vec4 lightPosition2 = view * lightObj2.loc;
 
     glUniform4fv( glGetUniformLocation(shaderProgram, "LightPosition"),
                   1, lightPosition);
+    glUniform4fv(glGetUniformLocation(shaderProgram, "LightPosition2"),
+                  1, lightPosition2);
+
     CheckError();
 
     for (int i=0; i < nObjects; i++) {
         SceneObject so = sceneObjs[i];
 
-        vec3 rgb = so.rgb * lightObj1.rgb * so.brightness * lightObj1.brightness * 2.0;
+        vec3 rgb = so.rgb * (lightObj1.rgb+lightObj2.rgb) * so.brightness * (lightObj1.brightness+lightObj2.brightness) * 2.0;
         vec3 white = (1.0, 1.0, 1.0);
         glUniform3fv( glGetUniformLocation(shaderProgram, "AmbientProduct"), 1, so.ambient * rgb );
         CheckError();
-        glUniform3fv( glGetUniformLocation(shaderProgram, "DiffuseProduct"), 1, so.diffuse * rgb );
         glUniform3fv( glGetUniformLocation(shaderProgram, "SpecularProduct"), 1, so.specular * white );
         glUniform1f( glGetUniformLocation(shaderProgram, "Shininess"), so.shine );
         CheckError();
@@ -477,6 +539,18 @@ static void lightMenu(int id)
         setToolCallbacks(adjustRedGreen, mat2(1.0, 0, 0, 1.0),
                          adjustBlueBrightness, mat2(1.0, 0, 0, 1.0) );
     }
+    else if(id == 80)
+    {
+      toolObj = 2;
+      setToolCallbacks(adjustLocXZ, camRotZ(),
+                       adjustBrightnessY, mat2(1.0, 0.0, 0.0, 10.0));
+    }
+    else if(id == 81)
+    {
+      toolObj = 2;
+      setToolCallbacks(adjustRedGreen, mat2(1.0, 0, 0, 1.0),
+                       adjustBlueBrightness, mat2(1.0, 0, 0, 1.0) );
+    }
     else {
         printf("Error in lightMenu\n");
         exit(1);
@@ -564,7 +638,7 @@ static void makeMenu()
 
     int materialMenuId = glutCreateMenu(materialMenu);
     glutAddMenuEntry("R/G/B/All",10);
-    glutAddMenuEntry("IMPLEMENTING: Ambient/Diffuse/Specular/Shine",20);
+    glutAddMenuEntry("Ambient/Diffuse/Specular/Shine",20);
 
     int texMenuId = createArrayMenu(numTextures, textureMenuEntries, texMenu);
     int groundMenuId = createArrayMenu(numTextures, textureMenuEntries, groundMenu);
