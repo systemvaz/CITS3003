@@ -400,9 +400,11 @@ void drawMesh(SceneObject sceneObj)
     // giving the time relative to the start of the animation,
     // measured in frames, like the frame numbers in Blender.)
 
+    float pose_time = glutGet(GLUT_ELAPSED_TIME) * 0.005;
+
     mat4 boneTransforms[nBones];     // was: mat4 boneTransforms[mesh->mNumBones];
     calculateAnimPose(meshes[sceneObj.meshId], scenes[sceneObj.meshId], 0,
-                      numDisplayCalls, boneTransforms);
+                      pose_time, boneTransforms);
     glUniformMatrix4fv(uBoneTransforms, nBones, GL_TRUE,
                       (const GLfloat *)boneTransforms);
     //**************

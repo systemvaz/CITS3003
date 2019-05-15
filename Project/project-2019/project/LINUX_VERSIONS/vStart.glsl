@@ -24,8 +24,8 @@ void main()
                          boneWeights[2] * boneTransforms[bone[2]] +
                          boneWeights[3] * boneTransforms[bone[3]];
 
+    //vec4 vpos = vec4(vPosition, 1.0);
     vec4 vpos = vec4(vPosition, 1.0);
-    //vec4 vpos = vec4(vPosition, boneTransform);
 
     // Transform vertex position into eye coordinates
     pos = (ModelView * boneTransform * vpos).xyz;
@@ -39,6 +39,6 @@ void main()
     //N = normalize( (ModelView * vec4(vNormal, 0.0)).xyz);
     N = normalize( (ModelView * boneTransform * vec4(vNormal, 0.0)).xyz);
 
-    gl_Position = Projection * ModelView * vpos;
+    gl_Position = Projection * ModelView * boneTransform * vpos;
     texCoord = vTexCoord;
 }
