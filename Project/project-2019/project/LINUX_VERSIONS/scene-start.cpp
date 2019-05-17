@@ -68,6 +68,7 @@ typedef struct {
     int meshId;
     int texId;
     float texScale;
+    int timeAdded;
 } SceneObject;
 
 const int maxObjects = 1024; // Scenes with more than 1024 objects seem unlikely
@@ -273,6 +274,8 @@ static void addObject(int id)
 
     if (id!=0 && id!=55)
         sceneObjs[nObjects].scale = 0.005;
+    if(id > 55)
+        sceneObjs[nObjects].scale = 0.05;
 
     sceneObjs[nObjects].rgb[0] = 0.7; sceneObjs[nObjects].rgb[1] = 0.7;
     sceneObjs[nObjects].rgb[2] = 0.7; sceneObjs[nObjects].brightness = 1.0;
@@ -286,6 +289,9 @@ static void addObject(int id)
     sceneObjs[nObjects].meshId = id;
     sceneObjs[nObjects].texId = rand() % numTextures;
     sceneObjs[nObjects].texScale = 2.0;
+
+
+    sceneObjs[nObjects].timeAdded = glutGet(GLUT_ELAPSED_TIME);
 
     toolObj = currObject = nObjects++;
     setToolCallbacks(adjustLocXZ, camRotZ(),
@@ -345,7 +351,12 @@ void init( void )
     sceneObjs[2].texId = 0;
     sceneObjs[2].brightness = 0.1;
 
-    addObject(rand() % numMeshes); // A test mesh
+    addObject(57);
+    sceneObjs[3].texId = 31;
+
+    //addObject(rand() % numMeshes); // A test mesh
+    // addObject(56);
+    // sceneObjs[3].scale = 10.0;
 
     // We need to enable the depth test to discard fragments that
     // are behind previously drawn fragments for the same pixel.
@@ -400,7 +411,13 @@ void drawMesh(SceneObject sceneObj)
     // giving the time relative to the start of the animation,
     // measured in frames, like the frame numbers in Blender.)
 
-    float pose_time = glutGet(GLUT_ELAPSED_TIME) * 0.005;
+    //calculate pose time, new addTime element added to Object struct.
+    aiAnimation **my_animation = scenes[sceneObj.meshId]->mAnimations;
+    double duration = (**my_animation).mDuration;
+    float temp = duration * 0.0001;
+
+    GLfloat pose_time = (glutGet(GLUT_ELAPSED_TIME) - sceneObj.timeAdded) * temp;
+
 
     mat4 boneTransforms[nBones];     // was: mat4 boneTransforms[mesh->mNumBones];
     calculateAnimPose(meshes[sceneObj.meshId], scenes[sceneObj.meshId], 0,
@@ -447,7 +464,7 @@ void display( void )
     for (int i=0; i < nObjects; i++) {
         SceneObject so = sceneObjs[i];
 
-        vec3 rgb = so.rgb * (lightObj1.rgb+lightObj2.rgb) * so.brightness * (lightObj1.brightness+lightObj2.brightness) * 2.0;
+        vec3 rgb = so.rgb * (lightObj1.rgb+lightObj2.rgb) * so.brightness * (lightObj1.brightness+lightObj2.brightness);
         vec3 white = (1.0, 1.0, 1.0);
         glUniform3fv( glGetUniformLocation(shaderProgram, "AmbientProduct"), 1, so.ambient * rgb );
         CheckError();
@@ -545,13 +562,13 @@ static void lightMenu(int id)
     {
       toolObj = 2;
       setToolCallbacks(adjustLocXZ, camRotZ(),
-                       adjustBrightnessY, mat2(1.0, 0.0, 0.0, 10.0));
+                       adjustBrightnessY, mat2(0.0, 0.5, 0.0, 1.0));
     }
     else if(id == 81)
     {
       toolObj = 2;
-      setToolCallbacks(adjustRedGreen, mat2(1.0, 0, 0, 1.0),
-                       adjustBlueBrightness, mat2(1.0, 0, 0, 1.0) );
+      setToolCallbacks(adjustRedGreen, mat2(0, 1.0, 0, 1.0),
+                       adjustBlueBrightness, mat2(0, 1.0, 0, 10.0) );
     }
     else {
         printf("Error in lightMenu\n");

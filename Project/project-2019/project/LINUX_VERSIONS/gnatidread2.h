@@ -11,13 +11,13 @@ const aiScene* loadScene(int meshNumber) {
         return aiImportFile(filename, aiProcessPreset_TargetRealtime_MaxQuality);
 }
 
-// Extract the boneIDs and boneWeights for the bones affecting each vertex in a mesh.  
-// Each vertex has up to 4 bones - if there are more than 4, lower weighted bones are omitted.  
+// Extract the boneIDs and boneWeights for the bones affecting each vertex in a mesh.
+// Each vertex has up to 4 bones - if there are more than 4, lower weighted bones are omitted.
 void getBonesAffectingEachVertex(aiMesh* mesh, GLint boneIDs[][4], GLfloat boneWeights[][4]) {
 
     // Initialize weights to 0.0
     for(unsigned int i=0; i < mesh->mNumVertices; i++)
-        for(int j=0; j<4; j++)  
+        for(int j=0; j<4; j++)
             boneWeights[i][j] = 0.0;
 
     if(mesh->mNumBones == 0) {  // No bones, so just use a single matrix (which should be the identity)
@@ -26,12 +26,12 @@ void getBonesAffectingEachVertex(aiMesh* mesh, GLint boneIDs[][4], GLfloat boneW
             boneWeights[i][0] = 1.0;
         }
         return;
-    }        
+    }
 
-    for (unsigned int boneID = 0 ; boneID < mesh->mNumBones ; boneID++)    // loop through bone weight data 
+    for (unsigned int boneID = 0 ; boneID < mesh->mNumBones ; boneID++)    // loop through bone weight data
 	    for (unsigned int weightID = 0 ; weightID < mesh->mBones[boneID]->mNumWeights ; weightID++) {
             int VertexID = mesh->mBones[boneID]->mWeights[weightID].mVertexId;
-            float Weight = mesh->mBones[boneID]->mWeights[weightID].mWeight; 
+            float Weight = mesh->mBones[boneID]->mWeights[weightID].mWeight;
 
             // Select the 4 largest weights via an insertion sort
             for(int slotID=0; slotID < 4; slotID++)
@@ -44,7 +44,7 @@ void getBonesAffectingEachVertex(aiMesh* mesh, GLint boneIDs[][4], GLfloat boneW
                     boneIDs[VertexID][slotID] = boneID;
                     break;
                 }
-	    }  
+	    }
 }
 
 // Parts of the following are broadly based on:
@@ -59,14 +59,14 @@ void calculateAnimPose(aiMesh* mesh, const aiScene* scene, int animNum, float po
         boneTransforms[0] = mat4(1.0);           // so, just return a single identity matrix
         return;
     }
-    if(scene->mNumAnimations <= (unsigned int)animNum)    
+    if(scene->mNumAnimations <= (unsigned int)animNum)
         failInt("No animation with number:", animNum);
 
     aiAnimation *anim = scene->mAnimations[animNum];  // animNum = 0 for the first animation
 
-    // Set transforms from bone channels 
+    // Set transforms from bone channels
     for(unsigned int chanID=0; chanID < anim->mNumChannels; chanID++) {
-        aiNodeAnim *channel = anim->mChannels[chanID];        
+        aiNodeAnim *channel = anim->mChannels[chanID];
         aiVector3D curPosition;
         aiQuaternion curRotation;   // interpolation of scaling purposefully left out for simplicity.
 
@@ -78,16 +78,16 @@ void calculateAnimPose(aiMesh* mesh, const aiScene* scene, int animNum, float po
         for(posIndex=0; posIndex+1 < channel->mNumPositionKeys; posIndex++)
             if( channel->mPositionKeys[posIndex + 1].mTime > poseTime )
                 break;   // the next key lies in the future - so use the current key
-            
+
         // This assumes that there is at least one key
         if(posIndex+1 == channel-> mNumPositionKeys)
-             curPosition = channel->mPositionKeys[posIndex].mValue;  
+             curPosition = channel->mPositionKeys[posIndex].mValue;
         else {
             float t0 = channel->mPositionKeys[posIndex].mTime;   // Interpolate position/translation
             float t1 = channel->mPositionKeys[posIndex+1].mTime;
-            float weight1 = (poseTime-t0)/(t1-t0);  
+            float weight1 = (poseTime-t0)/(t1-t0);
 
-            curPosition = channel->mPositionKeys[posIndex].mValue * (1.0f - weight1) + 
+            curPosition = channel->mPositionKeys[posIndex].mValue * (1.0f - weight1) +
                           channel->mPositionKeys[posIndex+1].mValue * weight1;
         }
 
@@ -102,30 +102,30 @@ void calculateAnimPose(aiMesh* mesh, const aiScene* scene, int animNum, float po
         else {
             float t0 = channel->mRotationKeys[rotIndex].mTime;   // Interpolate using quaternions
             float t1 = channel->mRotationKeys[rotIndex+1].mTime;
-            float weight1 = (poseTime-t0)/(t1-t0); 
- 
-            aiQuaternion::Interpolate(curRotation, channel->mRotationKeys[rotIndex].mValue, 
+            float weight1 = (poseTime-t0)/(t1-t0);
+
+            aiQuaternion::Interpolate(curRotation, channel->mRotationKeys[rotIndex].mValue,
                                       channel->mRotationKeys[rotIndex+1].mValue, weight1);
             curRotation = curRotation.Normalize();
         }
-             
+
         aiMatrix4x4 trafo = aiMatrix4x4(curRotation.GetMatrix());             // now build a rotation matrix
         trafo.a4 = curPosition.x; trafo.b4 = curPosition.y; trafo.c4 = curPosition.z; // add the translation
         targetNode->mTransformation = trafo;  // assign this transformation to the node
     }
 
     // Calculate the total transformation for each bone relative to the rest pose
-    for(unsigned int a=0; a<mesh->mNumBones; a++) { 
+    for(unsigned int a=0; a<mesh->mNumBones; a++) {
         const aiBone* bone = mesh->mBones[a];
         aiMatrix4x4 bTrans = bone->mOffsetMatrix;  // start with mesh-to-bone matrix to subtract rest pose
 
-        // Find the bone, then loop through the nodes/bones on the path up to the root. 
+        // Find the bone, then loop through the nodes/bones on the path up to the root.
         for(aiNode* node = scene->mRootNode->FindNode(bone->mName); node!=NULL; node=node->mParent)
             bTrans = node->mTransformation * bTrans;   // add each bone's current relative transformation
-        
+
         boneTransforms[a] =  mat4(vec4(bTrans.a1, bTrans.a2, bTrans.a3, bTrans.a4),
                                   vec4(bTrans.b1, bTrans.b2, bTrans.b3, bTrans.b4),
-                                  vec4(bTrans.c1, bTrans.c2, bTrans.c3, bTrans.c4), 
+                                  vec4(bTrans.c1, bTrans.c2, bTrans.c3, bTrans.c4),
                                   vec4(bTrans.d1, bTrans.d2, bTrans.d3, bTrans.d4));   // Convert to mat4
     }
 }

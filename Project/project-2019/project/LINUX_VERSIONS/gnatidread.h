@@ -7,7 +7,7 @@
 #include "bitmap.h"
 
 char dataDir[256];  // Stores the path to the models-textures folder.
-const int numTextures = 31;
+const int numTextures = 32;
 const int numMeshes = 60;
 
 
@@ -96,7 +96,7 @@ char textureMenuEntries[numTextures][128] = {
     "11 Wood", "12 Scales", "13 Fur", "14 Denim", "15 Hessian",
     "16 Orange Peel", "17 Ice Crystals", "18 Grass", "19 Corrugated Iron", "20 Styrofoam",
     "21 Bubble Wrap", "22 Leather", "23 Camouflage", "24 Asphalt", "25 Scratched Ice",
-    "26 Rattan", "27 Snow", "28 Dry Mud", "29 Old Concrete", "30 Leopard Skin"
+    "26 Rattan", "27 Snow", "28 Dry Mud", "29 Old Concrete", "30 Leopard Skin", "31 Female1"
 };
 
 char objectMenuEntries[numMeshes][128] = {
@@ -110,7 +110,8 @@ char objectMenuEntries[numMeshes][128] = {
     "36 Chihuahua", "37 Sabre-toothed Tiger", "38 Lioness", "39 Fish", "40 Horse (head down)",
     "41 Horse (head up)", "42 Skull", "43 Fighter Jet I", "44 Toad", "45 Convertible",
     "46 Porsche II", "47 Hare", "48 Vintage Car", "49 Fighter Jet II", "50 Gargoyle",
-    "51 Chef", "52 Parasaurolophus", "53 Rooster", "54 T-rex", "55 Sphere", "56 Example"
+    "51 Chef", "52 Parasaurolophus", "53 Rooster", "54 T-rex", "55 Sphere", "56 Example",
+    "57 Female1"
 };
 
 
