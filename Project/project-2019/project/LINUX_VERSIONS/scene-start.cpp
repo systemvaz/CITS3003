@@ -70,6 +70,7 @@ typedef struct {
     int texId;
     float texScale;
     int timeAdded;
+    int animSect;
 } SceneObject;
 
 const int maxObjects = 1024; // Scenes with more than 1024 objects seem unlikely
@@ -351,9 +352,24 @@ void init( void )
     sceneObjs[2].texId = 0;
     sceneObjs[2].brightness = 0.1;
 
-    addObject(56);
-    sceneObjs[3].texId = 31;
+    addObject(57);
+    sceneObjs[3].texId = 30;
+    sceneObjs[3].loc = vec4(0, 0, -0.5, 0);
     sceneObjs[3].timeAdded = glutGet(GLUT_ELAPSED_TIME);
+
+    addObject(58);
+    sceneObjs[4].texId = 23;
+    sceneObjs[4].scale = 0.07;
+    sceneObjs[4].angles[1] = 90.0;
+    sceneObjs[4].loc = vec4(-2.0, 0, -0.5, 0);
+    sceneObjs[4].timeAdded = glutGet(GLUT_ELAPSED_TIME);
+
+    addObject(59);
+    sceneObjs[5].texId = 8;
+    sceneObjs[5].scale = 0.1;
+    sceneObjs[5].angles[1] = -90.0;
+    sceneObjs[5].loc = vec4(2.0, 0, -0.5, 0);
+    sceneObjs[5].timeAdded = glutGet(GLUT_ELAPSED_TIME);
 
     //addObject(rand() % numMeshes); // A test mesh
     // addObject(56);
@@ -416,7 +432,8 @@ void drawMesh(SceneObject sceneObj)
     // measured in frames, like the frame numbers in Blender.)
 
     //calculate pose time, new addTime element added to Object struct.
-    float pose_time = (glutGet(GLUT_ELAPSED_TIME) - sceneObj.timeAdded) * 0.01;
+    float pose_time;
+    pose_time = (glutGet(GLUT_ELAPSED_TIME) - sceneObj.timeAdded) * 0.01;
 
     mat4 boneTransforms[nBones];     // was: mat4 boneTransforms[mesh->mNumBones];
 
@@ -424,13 +441,31 @@ void drawMesh(SceneObject sceneObj)
                       pose_time, boneTransforms);
 
    //CHANGED: PART 2 D.
-   if(sceneObj.meshId == 56)
+   if(sceneObj.meshId == 57)
    {
-      float animDuration = static_cast<float>(scenes[56]->mAnimations[0]->mDuration);
+      float animDuration = static_cast<float>(scenes[57]->mAnimations[0]->mDuration);
       if(pose_time >= animDuration)
       {
         sceneObjs[3].timeAdded = glutGet(GLUT_ELAPSED_TIME);
       }
+   }
+
+   if(sceneObj.meshId == 58)
+   {
+     float animDuration = static_cast<float>(scenes[58]->mAnimations[0]->mDuration);
+     if(pose_time >= animDuration)
+     {
+       sceneObjs[4].timeAdded = glutGet(GLUT_ELAPSED_TIME);
+     }
+   }
+
+   if(sceneObj.meshId == 59)
+   {
+     float animDuration = static_cast<float>(scenes[59]->mAnimations[0]->mDuration);
+     if(pose_time >= animDuration)
+     {
+       sceneObjs[5].timeAdded = glutGet(GLUT_ELAPSED_TIME);
+     }
    }
 
     glUniformMatrix4fv(uBoneTransforms, nBones, GL_TRUE,

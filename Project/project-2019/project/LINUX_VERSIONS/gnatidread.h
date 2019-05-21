@@ -8,7 +8,7 @@
 
 char dataDir[256];  // Stores the path to the models-textures folder.
 const int numTextures = 32;
-const int numMeshes = 60;
+const int numMeshes = 80;
 
 
 // ------Functions to fail with an error mesage then a string or int------
