@@ -128,4 +128,5 @@ void calculateAnimPose(aiMesh* mesh, const aiScene* scene, int animNum, float po
                                   vec4(bTrans.c1, bTrans.c2, bTrans.c3, bTrans.c4),
                                   vec4(bTrans.d1, bTrans.d2, bTrans.d3, bTrans.d4));   // Convert to mat4
     }
+
 }

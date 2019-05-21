@@ -39,6 +39,7 @@ mat4 view; // View matrix - set in the display function.
 char lab[] = "Project1";
 char *programName = NULL; // Set in main
 int numDisplayCalls = 0; // Used to calculate the number of frames per second
+float fps = 0;  //CHANGED: added for animation
 
 //------Meshes----------------------------------------------------------------
 // Uses the type aiMesh from ../../assimp--3.0.1270/include/assimp/mesh.h
@@ -188,6 +189,7 @@ void loadMeshIfNotAlreadyLoaded(int meshNumber)
     glVertexAttribPointer(vBoneWeights, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
     glEnableVertexAttribArray(vBoneWeights);    CheckError();
     //**************
+
 }
 
 //----------------------------------------------------------------------------
@@ -291,8 +293,6 @@ static void addObject(int id)
     sceneObjs[nObjects].texScale = 2.0;
 
 
-    sceneObjs[nObjects].timeAdded = glutGet(GLUT_ELAPSED_TIME);
-
     toolObj = currObject = nObjects++;
     setToolCallbacks(adjustLocXZ, camRotZ(),
                      adjustScaleY, mat2(0.05, 0, 0, 10.0) );
@@ -346,13 +346,14 @@ void init( void )
     sceneObjs[1].brightness = 0.1; // The light's brightness is 5 times this (below).
 
     addObject(55); //Sphere for second light
-    sceneObjs[2].loc = vec4(-2.0, 1.0, 1.0, 1.0);
+    sceneObjs[2].loc = vec4(-2.0, 1.0, 1.0, 0.0);  //we change W to 0 to indicate directional light
     sceneObjs[2].scale = 0.2;
     sceneObjs[2].texId = 0;
     sceneObjs[2].brightness = 0.1;
 
-    addObject(57);
+    addObject(56);
     sceneObjs[3].texId = 31;
+    sceneObjs[3].timeAdded = glutGet(GLUT_ELAPSED_TIME);
 
     //addObject(rand() % numMeshes); // A test mesh
     // addObject(56);
@@ -389,7 +390,10 @@ void drawMesh(SceneObject sceneObj)
     // Set the model matrix - this should combine translation, rotation and scaling based on what's
     // in the sceneObj structure (see near the top of the program).
 
-    mat4 model = Translate(sceneObj.loc) * Scale(sceneObj.scale) * RotateX(sceneObj.angles[0]) * RotateY(sceneObj.angles[1]) * RotateZ(sceneObj.angles[2]);
+    //CHANGE: SECTION 1 B.
+    mat4 model = Translate(sceneObj.loc) * Scale(sceneObj.scale)
+                 * RotateX(sceneObj.angles[0]) * RotateY(sceneObj.angles[1])
+                 * RotateZ(sceneObj.angles[2]);
 
 
     // Set the model-view matrix for the shaders
@@ -412,16 +416,23 @@ void drawMesh(SceneObject sceneObj)
     // measured in frames, like the frame numbers in Blender.)
 
     //calculate pose time, new addTime element added to Object struct.
-    aiAnimation **my_animation = scenes[sceneObj.meshId]->mAnimations;
-    double duration = (**my_animation).mDuration;
-    float temp = duration * 0.0001;
-
-    GLfloat pose_time = (glutGet(GLUT_ELAPSED_TIME) - sceneObj.timeAdded) * temp;
-
+    float pose_time = (glutGet(GLUT_ELAPSED_TIME) - sceneObj.timeAdded) * 0.01;
 
     mat4 boneTransforms[nBones];     // was: mat4 boneTransforms[mesh->mNumBones];
+
     calculateAnimPose(meshes[sceneObj.meshId], scenes[sceneObj.meshId], 0,
                       pose_time, boneTransforms);
+
+   //CHANGED: PART 2 D.
+   if(sceneObj.meshId == 56)
+   {
+      float animDuration = static_cast<float>(scenes[56]->mAnimations[0]->mDuration);
+      if(pose_time >= animDuration)
+      {
+        sceneObjs[3].timeAdded = glutGet(GLUT_ELAPSED_TIME);
+      }
+   }
+
     glUniformMatrix4fv(uBoneTransforms, nBones, GL_TRUE,
                       (const GLfloat *)boneTransforms);
     //**************
@@ -446,8 +457,8 @@ void display( void )
     // Set the view matrix. To start with this just moves the camera
     // backwards.  You'll need to add appropriate rotations.
 
-    // view = Translate(0.0, 0.0, -viewDist) * RotateY(camRotSidewaysDeg)* RotateX(camRotUpAndOverDeg);
-    view = Translate(0.0, 0.0, -viewDist) * RotateY(camRotSidewaysDeg) * RotateX(camRotUpAndOverDeg);
+    // CHANGE: SECTION 1 A.
+    view = Translate(0.0, 0.0, -viewDist) * RotateX(camRotUpAndOverDeg) * RotateY(camRotSidewaysDeg);
 
     SceneObject lightObj1 = sceneObjs[1];
     SceneObject lightObj2 = sceneObjs[2];
@@ -465,9 +476,12 @@ void display( void )
         SceneObject so = sceneObjs[i];
 
         vec3 rgb = so.rgb * (lightObj1.rgb+lightObj2.rgb) * so.brightness * (lightObj1.brightness+lightObj2.brightness);
+        //vec3 rgb = so.rgb * lightObj1.rgb * so.brightness * lightObj1.brightness * 2.0;
         vec3 white = (1.0, 1.0, 1.0);
         glUniform3fv( glGetUniformLocation(shaderProgram, "AmbientProduct"), 1, so.ambient * rgb );
         CheckError();
+        glUniform3fv( glGetUniformLocation(shaderProgram, "DiffuseProduct"), 1, so.diffuse * rgb );
+        // glUniform3fv( glGetUniformLocation(shaderProgram, "SpecularProduct"), 1, so.specular * rgb );
         glUniform3fv( glGetUniformLocation(shaderProgram, "SpecularProduct"), 1, so.specular * white );
         glUniform1f( glGetUniformLocation(shaderProgram, "Shininess"), so.shine );
         CheckError();
@@ -562,13 +576,13 @@ static void lightMenu(int id)
     {
       toolObj = 2;
       setToolCallbacks(adjustLocXZ, camRotZ(),
-                       adjustBrightnessY, mat2(0.0, 0.5, 0.0, 1.0));
+                       adjustBrightnessY, mat2(0.0, 1.0, 0.0, 10.0));
     }
     else if(id == 81)
     {
       toolObj = 2;
       setToolCallbacks(adjustRedGreen, mat2(0, 1.0, 0, 1.0),
-                       adjustBlueBrightness, mat2(0, 1.0, 0, 10.0) );
+                       adjustBlueBrightness, mat2(0, 1.0, 0, 1.0) );
     }
     else {
         printf("Error in lightMenu\n");
@@ -608,11 +622,14 @@ static void materialMenu(int id)
                          adjustBlueBrightness, mat2(1, 0, 0, 1) );
     }
     // You'll need to fill in the remaining menu items here.
+    // CHANGE: SECTION 1 C.
     if(id==20)
     {
       toolObj = currObject;
-      setToolCallbacks(adjustDiffuseLighting, mat2(0, 1, 0, 1),
-                       adjustShine, mat2(0, 1, 0, 1));
+
+      setToolCallbacks(adjustDiffuseLighting, mat2(0, 5, 0, 1),
+                       adjustShine, mat2(0, 5, 0, 1));
+
       setToolCallbacks(adjustAmbientLighting, mat2(1, 0, 0, 1),
                        adjustSpecularLighting, mat2(1, 0, 0, 1));
 
@@ -716,7 +733,12 @@ void reshape( int width, int height )
     //         that the same part of the scene is visible across the width of
     //         the window.
 
-    GLfloat nearDist = 0.01;
+    //CHANGED: SECTION 1 D.
+
+    GLfloat nearDist = 0.005;
+
+    //CHANGED: SECTION 1 E.
+
     projection = Frustum(-nearDist*(float)width/(float)height,
                          nearDist*(float)width/(float)height,
                          -nearDist*(float)height/(float)width,
@@ -734,6 +756,7 @@ void timer(int unused)
 
     glutSetWindowTitle(title);
 
+    fps = numDisplayCalls;
     numDisplayCalls = 0;
     glutTimerFunc(1000, timer, 1);
 }
