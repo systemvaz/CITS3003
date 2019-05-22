@@ -32,11 +32,13 @@ static float viewDist = 1.5; // Distance from the camera to the centre of the sc
 static float camRotSidewaysDeg=0; // rotates the camera sideways around the centre
 static float camRotUpAndOverDeg=45; // rotates the camera up and over the centre.
 
+float camStraif = 0;
+
 mat4 projection; // Projection matrix - set in the reshape function
 mat4 view; // View matrix - set in the display function.
 
 // These are used to set the window title
-char lab[] = "Project1";
+char lab[] = "CITS3003 Project 2019 - Alexander Varano della Vergiliana";
 char *programName = NULL; // Set in main
 int numDisplayCalls = 0; // Used to calculate the number of frames per second
 float fps = 0;  //CHANGED: added for animation
@@ -70,6 +72,7 @@ typedef struct {
     int texId;
     float texScale;
     int timeAdded;
+    float animSpeed;
     int animSect;
 } SceneObject;
 
@@ -255,7 +258,7 @@ static void adjustScaleY(vec2 sy)
 
 //----------------------------------------------------------------------------
 //------Set the mouse buttons to rotate the camera----------------------------
-//------around the centre of the scene.---------------------------------------
+//------around the centre of the scene.currMouseXYscreen---------------------------------------
 //----------------------------------------------------------------------------
 
 static void doRotate()
@@ -293,12 +296,27 @@ static void addObject(int id)
     sceneObjs[nObjects].texId = rand() % numTextures;
     sceneObjs[nObjects].texScale = 2.0;
 
+    //CHANGED: ANIMATION VARIABLES.
+    sceneObjs[nObjects].animSpeed = 0.02;
+    sceneObjs[nObjects].animSect = 1;
+    sceneObjs[nObjects].timeAdded = glutGet(GLUT_ELAPSED_TIME);
+
 
     toolObj = currObject = nObjects++;
     setToolCallbacks(adjustLocXZ, camRotZ(),
                      adjustScaleY, mat2(0.05, 0, 0, 10.0) );
     glutPostRedisplay();
 }
+
+//------ CHANGED: New delete current object function. Called by Menu id 40
+void deleteObject()
+{
+  sceneObjs[currObject].meshId = NULL;
+  sceneObjs[currObject].texId = NULL;
+  toolObj = currObject = nObjects--;
+}
+
+//-----------
 
 //------The init function-----------------------------------------------------
 
@@ -352,24 +370,25 @@ void init( void )
     sceneObjs[2].texId = 0;
     sceneObjs[2].brightness = 0.1;
 
+    //Dancing lady animation
     addObject(57);
     sceneObjs[3].texId = 30;
     sceneObjs[3].loc = vec4(0, 0, -0.5, 0);
-    sceneObjs[3].timeAdded = glutGet(GLUT_ELAPSED_TIME);
 
-    addObject(58);
-    sceneObjs[4].texId = 23;
-    sceneObjs[4].scale = 0.07;
-    sceneObjs[4].angles[1] = 90.0;
-    sceneObjs[4].loc = vec4(-2.0, 0, -0.5, 0);
-    sceneObjs[4].timeAdded = glutGet(GLUT_ELAPSED_TIME);
-
+    //Dancing baby animation
     addObject(59);
-    sceneObjs[5].texId = 8;
-    sceneObjs[5].scale = 0.1;
-    sceneObjs[5].angles[1] = -90.0;
-    sceneObjs[5].loc = vec4(2.0, 0, -0.5, 0);
-    sceneObjs[5].timeAdded = glutGet(GLUT_ELAPSED_TIME);
+    sceneObjs[4].texId = 8;
+    sceneObjs[4].scale = 0.1;
+    sceneObjs[4].angles[1] = -90.0;
+    sceneObjs[4].loc = vec4(2.0, 0, -0.5, 0);
+
+    //Boxing man animation
+    addObject(58);
+    sceneObjs[5].texId = 23;
+    sceneObjs[5].scale = 0.07;
+    sceneObjs[5].angles[1] = 90.0;
+    sceneObjs[5].loc = vec4(-2.0, 0, -0.5, 0);
+
 
     //addObject(rand() % numMeshes); // A test mesh
     // addObject(56);
@@ -432,41 +451,59 @@ void drawMesh(SceneObject sceneObj)
     // measured in frames, like the frame numbers in Blender.)
 
     //calculate pose time, new addTime element added to Object struct.
+   //CHANGED: PART 2 D.
     float pose_time;
-    pose_time = (glutGet(GLUT_ELAPSED_TIME) - sceneObj.timeAdded) * 0.01;
+    float animDuration;
+
+    if(sceneObj.animSpeed <= 0)
+    {
+      sceneObj.animSpeed = 0.001;
+    }
+
+    //Dancing Lady - animation loops forward & backward
+    if(sceneObj.meshId == 57)
+    {
+       animDuration = static_cast<float>(scenes[57]->mAnimations[0]->mDuration);
+       pose_time = fabs(animDuration - ((glutGet(GLUT_ELAPSED_TIME) - sceneObj.timeAdded) *
+                    fabs(sceneObj.animSpeed)));
+       if(pose_time >= animDuration)
+       {
+         sceneObjs[3].timeAdded = glutGet(GLUT_ELAPSED_TIME);
+       }
+    }
+    //Dancing Baby - animation loops forward & backward
+    else if(sceneObj.meshId == 59)
+    {
+      animDuration = static_cast<float>(scenes[59]->mAnimations[0]->mDuration);
+      pose_time = fabs(animDuration - ((glutGet(GLUT_ELAPSED_TIME) - sceneObj.timeAdded) *
+                   fabs(sceneObj.animSpeed)));
+      if(pose_time >= animDuration)
+      {
+        sceneObjs[4].timeAdded = glutGet(GLUT_ELAPSED_TIME);
+      }
+    }
+    //Boxing Man - animation loops forward & backward
+    else if(sceneObj.meshId == 58)
+    {
+      animDuration = static_cast<float>(scenes[58]->mAnimations[0]->mDuration);
+      pose_time = fabs(animDuration - ((glutGet(GLUT_ELAPSED_TIME) - sceneObj.timeAdded) *
+                   fabs(sceneObj.animSpeed)));
+      if(pose_time >= animDuration)
+      {
+        sceneObjs[5].timeAdded = glutGet(GLUT_ELAPSED_TIME);
+      }
+    }
+    //All other animations, just go forward once.
+    else
+    {
+      pose_time = (glutGet(GLUT_ELAPSED_TIME) - sceneObj.timeAdded) *
+                   fabs(sceneObj.animSpeed);
+    }
 
     mat4 boneTransforms[nBones];     // was: mat4 boneTransforms[mesh->mNumBones];
 
     calculateAnimPose(meshes[sceneObj.meshId], scenes[sceneObj.meshId], 0,
                       pose_time, boneTransforms);
-
-   //CHANGED: PART 2 D.
-   if(sceneObj.meshId == 57)
-   {
-      float animDuration = static_cast<float>(scenes[57]->mAnimations[0]->mDuration);
-      if(pose_time >= animDuration)
-      {
-        sceneObjs[3].timeAdded = glutGet(GLUT_ELAPSED_TIME);
-      }
-   }
-
-   if(sceneObj.meshId == 58)
-   {
-     float animDuration = static_cast<float>(scenes[58]->mAnimations[0]->mDuration);
-     if(pose_time >= animDuration)
-     {
-       sceneObjs[4].timeAdded = glutGet(GLUT_ELAPSED_TIME);
-     }
-   }
-
-   if(sceneObj.meshId == 59)
-   {
-     float animDuration = static_cast<float>(scenes[59]->mAnimations[0]->mDuration);
-     if(pose_time >= animDuration)
-     {
-       sceneObjs[5].timeAdded = glutGet(GLUT_ELAPSED_TIME);
-     }
-   }
 
     glUniformMatrix4fv(uBoneTransforms, nBones, GL_TRUE,
                       (const GLfloat *)boneTransforms);
@@ -492,8 +529,8 @@ void display( void )
     // Set the view matrix. To start with this just moves the camera
     // backwards.  You'll need to add appropriate rotations.
 
-    // CHANGE: SECTION 1 A.
-    view = Translate(0.0, 0.0, -viewDist) * RotateX(camRotUpAndOverDeg) * RotateY(camRotSidewaysDeg);
+    // CHANGE: SECTION 1 A. Also added camStraif from keyboard function for keyboard movement
+    view = Translate(camStraif, 0.0, -viewDist) * RotateX(camRotUpAndOverDeg) * RotateY(camRotSidewaysDeg);
 
     SceneObject lightObj1 = sceneObjs[1];
     SceneObject lightObj2 = sceneObjs[2];
@@ -510,14 +547,14 @@ void display( void )
     for (int i=0; i < nObjects; i++) {
         SceneObject so = sceneObjs[i];
 
-        vec3 rgb = so.rgb * (lightObj1.rgb+lightObj2.rgb) * so.brightness * (lightObj1.brightness+lightObj2.brightness);
+        vec3 rgb = so.rgb * (lightObj1.rgb+lightObj2.rgb) * so.brightness * (lightObj1.brightness+lightObj2.brightness * 2.0);
         //vec3 rgb = so.rgb * lightObj1.rgb * so.brightness * lightObj1.brightness * 2.0;
         vec3 white = (1.0, 1.0, 1.0);
-        glUniform3fv( glGetUniformLocation(shaderProgram, "AmbientProduct"), 1, so.ambient * rgb );
+        glUniform3fv( glGetUniformLocation(shaderProgram, "AmbientProduct"), 1, so.ambient * rgb / 2 );
         CheckError();
         glUniform3fv( glGetUniformLocation(shaderProgram, "DiffuseProduct"), 1, so.diffuse * rgb );
         // glUniform3fv( glGetUniformLocation(shaderProgram, "SpecularProduct"), 1, so.specular * rgb );
-        glUniform3fv( glGetUniformLocation(shaderProgram, "SpecularProduct"), 1, so.specular * white );
+        glUniform3fv( glGetUniformLocation(shaderProgram, "SpecularProduct"), 1, so.specular * white * 2 );
         glUniform1f( glGetUniformLocation(shaderProgram, "Shininess"), so.shine );
         CheckError();
 
@@ -686,9 +723,46 @@ static void adjustAngleZTexscale(vec2 az_ts)
     sceneObjs[currObject].texScale+=az_ts[1];
 }
 
+//CHANGED:  SECTION 2 D. ADDED MENU FOR ANIMATION
+static void adjustAnimSpeed(vec2 speed_x)
+{
+    sceneObjs[currObject].animSpeed+=speed_x[0];
+    sceneObjs[currObject].animSpeed+=speed_x[1];
+}
+
+static void animMenu(int id)
+{
+  deactivateTool();
+
+  if(id == 90)
+  {
+    toolObj = currObject;
+    setToolCallbacks(adjustAnimSpeed, mat2(0.000001, 0.000001, 0, 1),
+                     adjustAnimSpeed, mat2(0.000001, 0.000001, 0, 1));
+  }
+
+  if(id == 91)
+  {
+    toolObj = currObject;
+    sceneObjs[currObject].animSpeed = 0.02;
+  }
+}
+
+// static void selectObject()
+// {
+//   vec2 currPos = currMouseXYworld(camRotSidewaysDeg);
+//   printf("X: %f, Y: %f\n", currPos[0], currPos[1]);
+// }
+
 static void mainmenu(int id)
 {
     deactivateTool();
+
+    if(id == 40 && currObject >= 0)
+    {
+      deleteObject();
+    }
+
     if (id == 41 && currObject>=0) {
         toolObj=currObject;
         setToolCallbacks(adjustLocXZ, camRotZ(),
@@ -700,6 +774,7 @@ static void mainmenu(int id)
         setToolCallbacks(adjustAngleYX, mat2(400, 0, 0, -400),
                          adjustAngleZTexscale, mat2(400, 0, 0, 15) );
     }
+
     if (id == 99) exit(0);
 }
 
@@ -720,15 +795,21 @@ static void makeMenu()
     glutAddMenuEntry("Move Light 2",80);
     glutAddMenuEntry("R/G/B/All Light 2",81);
 
+    int animMenuId = glutCreateMenu(animMenu);
+    glutAddMenuEntry("Adjust Speed", 90);
+    glutAddMenuEntry("Reset Speed", 91);
+
     glutCreateMenu(mainmenu);
     glutAddMenuEntry("Rotate/Move Camera",50);
     glutAddSubMenu("Add object", objectId);
+    glutAddMenuEntry("Delete Current Object", 40);
     glutAddMenuEntry("Position/Scale", 41);
     glutAddMenuEntry("Rotation/Texture Scale", 55);
     glutAddSubMenu("Material", materialMenuId);
     glutAddSubMenu("Texture",texMenuId);
     glutAddSubMenu("Ground Texture",groundMenuId);
     glutAddSubMenu("Lights",lightMenuId);
+    glutAddSubMenu("Animation", animMenuId);
     glutAddMenuEntry("EXIT", 99);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
@@ -740,6 +821,19 @@ void keyboard( unsigned char key, int x, int y )
     switch ( key ) {
     case 033:
         exit( EXIT_SUCCESS );
+        break;
+    //CHANGED: Added functionality, movement with adsw keys.
+    case 'w':
+        viewDist = (viewDist < 0.0 ? viewDist : viewDist*0.8) - 0.05;
+        break;
+    case 's':
+        viewDist = (viewDist < 0.0 ? viewDist : viewDist*1.25) + 0.05;
+        break;
+    case 'a':
+        camStraif+=0.2;
+        break;
+    case 'd':
+        camStraif-=0.2;
         break;
     }
 }
