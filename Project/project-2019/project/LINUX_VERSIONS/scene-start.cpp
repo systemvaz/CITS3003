@@ -1,3 +1,8 @@
+/*-------------------------------------
+* CITS3003 Project 2019
+* Alexander Varano della Vergiliana.
+* Student ID: 22268701
+* ------------------------------------*/
 
 #include "Angel.h"
 
@@ -28,7 +33,7 @@ GLuint vPosition, vNormal, vTexCoord; // IDs for vshader input vars (from glGetA
 GLuint projectionU, modelViewU; // IDs for uniform variables (from glGetUniformLocation)
 GLuint vBoneIDs, vBoneWeights, uBoneTransforms;
 
-static float viewDist = 1.5; // Distance from the camera to the centre of the scene
+static float viewDist = 3.0; // Distance from the camera to the centre of the scene
 static float camRotSidewaysDeg=0; // rotates the camera sideways around the centre
 static float camRotUpAndOverDeg=45; // rotates the camera up and over the centre.
 
@@ -388,7 +393,6 @@ void init( void )
     sceneObjs[5].scale = 0.07;
     sceneObjs[5].angles[1] = 90.0;
     sceneObjs[5].loc = vec4(-2.0, 0, -0.5, 0);
-
 
     //addObject(rand() % numMeshes); // A test mesh
     // addObject(56);
@@ -824,10 +828,10 @@ void keyboard( unsigned char key, int x, int y )
         break;
     //CHANGED: Added functionality, movement with adsw keys.
     case 'w':
-        viewDist = (viewDist < 0.0 ? viewDist : viewDist*0.8) - 0.05;
+        viewDist = (viewDist < 0.0 ? viewDist : viewDist*0.8) - 0.001;
         break;
     case 's':
-        viewDist = (viewDist < 0.0 ? viewDist : viewDist*1.25) + 0.05;
+        viewDist = (viewDist < 0.0 ? viewDist : viewDist*1.25) + 0.001;
         break;
     case 'a':
         camStraif+=0.2;

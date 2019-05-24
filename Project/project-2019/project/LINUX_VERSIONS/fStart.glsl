@@ -1,3 +1,9 @@
+/*-------------------------------------
+* CITS3003 Project 2019
+* Alexander Varano della Vergiliana.
+* Student ID: 22268701
+* ------------------------------------*/
+
 varying vec3 pos, N;
 varying vec2 texCoord;  // The third coordinate is always 0.0 and is discarded
 

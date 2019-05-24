@@ -1,3 +1,9 @@
+/*-------------------------------------
+* CITS3003 Project 2019
+* Alexander Varano della Vergiliana.
+* Student ID: 22268701
+* ------------------------------------*/
+
 attribute vec3 vPosition;
 attribute vec2 vTexCoord;
 attribute vec3 vNormal;
